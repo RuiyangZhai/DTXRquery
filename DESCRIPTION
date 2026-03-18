@@ -3,7 +3,7 @@ Title: Client Interface (Query, Download and Visualize) for the DisTxRESP Databa
 Version: 1.0.0
 Authors@R: c(
     person("Te", "Ma", , "mate.compbio@foxmail.com", role = c("aut", "cre")),
-    person("Ruiyang", "Zhai", , "zhairuiyang@foxmail.com", role = c("aut", "cre"))
+    person("Ruiyang", "Zhai", , "zhairuiyang@foxmail.com", role = c("aut"))
   )
 Description: What the package does (one paragraph).
 License: MIT + file LICENSE
