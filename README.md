@@ -32,7 +32,7 @@ client <- DisTxRESP$new()
 head(client$metadata)
 ```
 #### 2. Filter and Load Data
-You can chain methods together to filter the datasets you need and load them directly into memory for analysis.
+You can chain methods together to filter the required data sets, download them and load them into memory for analysis.
 ```R
 # Filter specific data sets and feature types
 client$filter_metadata(
@@ -49,9 +49,23 @@ client$download_files(output_dir = "my_data")
 # Load into memory
 client$load_to_memory(local_dir = "my_data")
 ```
-_(Note: If you do not want to save the file locally, you can also directly use `client$load_to_memory()`.)_
+
 #### 3. Data Visualization
 Once the data is loaded into memory, you can use the built-in visualization methods.
+
+__Pie Plot__
+Pie chart for visualizing clinical baseline characteristics：
+```R
+# View the proportion of different response groups in the dataset
+pie_plt <- client$plot_pie(dataset = "DTXR600031",clinical_col = "Response")
+
+# View gender ratio of patients
+# pie_plt <- client$plot_pie(dataset = "DTXR600031",clinical_col = "Sex")
+print(pie_plt)
+```
+<div align=center>
+  <img src="https://github.com/RuiyangZhai/img/blob/main/DTXRquery/pie_plt.png?raw=true" width="600">
+</div>
 
 __Volcano Plot__
 
@@ -69,7 +83,7 @@ volcano_plt <- client$plot_volcano(
 print(volcano_plt)
 ```
 <div align=center>
-  <img src="https://github.com/RuiyangZhai/img/blob/main/CIsubtype.png?raw=true" width="600">
+  <img src="https://github.com/RuiyangZhai/img/blob/main/DTXRquery/volcano_plt.png?raw=true" width="600">
 </div>
 
 __Boxplot__
@@ -86,7 +100,7 @@ box_plt <- client$plot_boxplot(
 print(box_plt)
 ```
 <div align=center>
-  <img src="https://github.com/RuiyangZhai/img/blob/main/CIsubtype.png?raw=true" width="600">
+  <img src="https://github.com/RuiyangZhai/img/blob/main/DTXRquery/box_plt.png?raw=true" width="600">
 </div>
 
 __ROC Curve__
@@ -104,7 +118,7 @@ roc_plt <- client$plot_roc(
 print(roc_plt)
 ```
 <div align=center>
-  <img src="https://github.com/RuiyangZhai/img/blob/main/CIsubtype.png?raw=true" width="600">
+  <img src="https://github.com/RuiyangZhai/img/blob/main/DTXRquery/roc_plt.png?raw=true" width="600">
 </div>
 
 ## Contact
