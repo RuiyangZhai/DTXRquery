@@ -36,8 +36,8 @@ You can chain methods together to filter the required data sets, download them a
 ```R
 # Filter specific data sets and feature types
 client$filter_metadata(
-  dtxr = c("DTXR100001","DTXR100002"),
-  feature = c("Clinical Data","Pathway Activity","Gene Expression")
+  dtxr = c("DTXR600031","DTXR500068"),
+  feature = c("Clinical Data","Microbial Abundance")
 )
 
 # Check the filtered subset table
