@@ -43,7 +43,7 @@ DisTxRESP <- R6Class("DisTxRESP",
                            message("Connecting to server and fetching metadata table...")
                            meta_url <- private$make_request("Download_Manifest.csv")
 
-                           download_file(url = meta_url, destfile = manifest)
+                           private$download_file(url = meta_url, destfile = manifest)
 
                          }else{
                            message("Local file found, reading...")
