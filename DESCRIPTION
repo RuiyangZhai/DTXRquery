@@ -12,6 +12,7 @@ Imports:
     base64enc,
     data.table,
     ggplot2,
+    httr,
     pROC,
     R6,
     rlang,

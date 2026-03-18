@@ -3,8 +3,9 @@
 #' @importFrom R6 R6Class
 #' @importFrom data.table fread
 #' @importFrom base64enc base64decode
-#' @importFrom utils download.file
+#' @importFrom httr GET http_error http_status
 #' @importFrom ggplot2 ggplot aes geom_point scale_color_manual theme_bw labs geom_vline geom_hline geom_boxplot geom_jitter theme_classic
+#' @importFrom ggpubr stat_compare_means
 #' @importFrom pROC roc ggroc
 #' @importFrom rlang .data
 #' @export
@@ -14,33 +15,17 @@ DisTxRESP <- R6Class("DisTxRESP",
                        make_request = function(endpoint) {
                          dl_url = paste0(rawToChar(base64decode(private$api_token)), endpoint)
                          return(dl_url)
+                       },
+                       download_file = function(url, destfile) {
+                         response <- GET(url,
+                                         write_disk(destfile, overwrite = TRUE),
+                                         progress(),
+                                         config(max_recv_speed_large = 100000))
+                         if(http_error(response)) {
+                           stop("Download failed: ", http_status(response)$message)
+                         }
+                         return(invisible(response))
                        }
-                       # ==========================================
-                       # Fuzzy matching
-                       # ==========================================
-                       # check_fuzzy_match = function(user_inputs, valid_pool, col_name) {
-                       #   if (is.null(user_inputs)) return(NULL)
-                       #
-                       #   valid_unique <- unique(valid_pool)
-                       #   valid_unique <- valid_unique[!is.na(valid_unique)]
-                       #
-                       #   invalid_inputs <- user_inputs[!user_inputs %in% valid_unique]
-                       #
-                       #   if (length(invalid_inputs) > 0) {
-                       #     suggestions <- sapply(invalid_inputs, function(x) {
-                       #       if (length(valid_unique) == 0) return(sprintf("  - Cannot find '%s'.", x))
-                       #
-                       #       dists <- as.vector(adist(x, valid_unique, ignore.case = TRUE))
-                       #       closest_match <- valid_unique[which.min(dists)]
-                       #
-                       #       return(sprintf("  - Cannot find '%s'. Do you want to enter: '%s'?", x, closest_match))
-                       #     })
-                       #
-                       #     warning(sprintf("\nInvalid parameter in [%s] query:\n%s",
-                       #                     col_name, paste(suggestions, collapse = "\n")),
-                       #             call. = FALSE, immediate. = TRUE)
-                       #   }
-                       # }
                      ),
                      public = list(
                        #' @field metadata A data.frame containing the full metadata manifest downloaded from the server.
@@ -171,11 +156,7 @@ DisTxRESP <- R6Class("DisTxRESP",
                            dl_url <- private$make_request(sprintf("%s/%s",data_id, f_name))
 
                            message(sprintf("Downloading %s...", f_name))
-                           tryCatch({
-                             download.file(dl_url, destfile = file_name, mode = "wb", quiet = TRUE)
-                           }, error = function(e) {
-                             warning(sprintf("Failed to download %s: %s", data_id, e$message))
-                           })
+                           private$download_file(url = dl_url,destfile = file_name)
                          }
                          message(" \n Batch download complete.")
                          return(invisible(self))
@@ -184,7 +165,7 @@ DisTxRESP <- R6Class("DisTxRESP",
                        #' @description Fetch the filtered files and load them directly into an R list structure.
                        #' @param local_dir String. Optional directory path containing locally downloaded files. If provided, the function will attempt to read from this local directory before fetching from the server.
                        #' @return Returns the modified R6 object invisibly. The loaded data is accessible via the \code{local_data} field.
-                       load_to_memory = function(local_dir=NULL) {
+                       load_to_memory = function(local_dir="downloaded_data") {
                          if (nrow(self$sub_table) == 0) stop("The filtered table is empty. Nothing to load.")
 
                          result_list <- list()
@@ -202,13 +183,12 @@ DisTxRESP <- R6Class("DisTxRESP",
                              if (file.exists(file_name)) {
                                message(sprintf("File found, loading %s into memory...", f_name))
                              }else{
-                               message(sprintf("Loading %s into memory...", list_name))
-                               file_name <- private$make_request(sprintf("%s/%s",data_id, f_name))
+                               stop(sprintf("The file was not found: %s", f_name))
                              }
                            }else{
-                             message(sprintf("Loading %s into memory...", list_name))
-                             file_name <- private$make_request(sprintf("%s/%s",data_id, f_name))
+                             message("Loading path cannot be empty!")
                            }
+
                            tryCatch({
                              if (f_type=="Meta_Info") {
                                result_list[[data_id]][[f_type]] <- fread(file_name, data.table = F, header = T)
@@ -262,8 +242,9 @@ DisTxRESP <- R6Class("DisTxRESP",
                        #' @param feature_type String. The type of feature matrix (e.g., "Gene Expression").
                        #' @param feature_name String. The specific feature name to plot (e.g., "CD274").
                        #' @param group_col String. The column name in the clinical metadata used for grouping samples. Defaults to "Response".
+                       #' @param stat_method String. The Method for comparing means.
                        #' @return A \code{ggplot} object.
-                       plot_boxplot = function(dataset, feature_type, feature_name, group_col="Response") {
+                       plot_boxplot = function(dataset, feature_type, feature_name, group_col="Response",stat_method="wilcox.test") {
 
                          clin_df <- self$local_data[[dataset]]$Meta_Info
                          if (is.null(clin_df)) stop("No clinical information found!")
@@ -291,7 +272,12 @@ DisTxRESP <- R6Class("DisTxRESP",
                            ggplot2::labs(title = sprintf("Expression of %s", feature_name),
                                          subtitle = sprintf("Dataset: %s", dataset),
                                          y = "Feature Value", x = group_col) +
-                           ggplot2::theme(legend.position = "none")
+                           ggplot2::theme(legend.position = "none")+
+                           ggpubr::stat_compare_means(
+                             method = stat_method,
+                             label = "p.signif",
+                             label.x = 1.5
+                           )
 
                          return(p)
                        },
@@ -336,6 +322,40 @@ DisTxRESP <- R6Class("DisTxRESP",
                                          subtitle = sprintf("AUC = %s", auc_val),
                                          x = "Specificity", y = "Sensitivity")
 
+                         return(p)
+                       },
+
+                       #' @description Generate a Pie Chart for categorical clinical information.
+                       #' @param dataset String. The dataset identifier (e.g., "DTXR100001").
+                       #' @param clinical_col String. The column name in the clinical metadata representing the categorical variable (e.g., "Response", "Sex").
+                       #' @return A \code{ggplot} object.
+                       plot_pie = function(dataset, clinical_col) {
+                         if (is.null(self$local_data[[dataset]])) stop("The dataset is not found!")
+                         clin_df <- self$local_data[[dataset]]$Meta_Info
+                         if (is.null(clin_df)) stop("No clinical information found!")
+                         if (!clinical_col %in% colnames(clin_df)) stop(sprintf("Column not found in clinical information: %s", clinical_col))
+
+                         clin_vector <- na.omit(clin_df[[clinical_col]])
+                         if (length(clin_vector) == 0) stop("The specified clinical column only contains NA values!")
+
+                         plot_data <- as.data.frame(table(clin_vector))
+                         colnames(plot_data) <- c("Category", "Count")
+                         plot_data$Percentage <- prop.table(plot_data$Count) * 100
+
+                         plot_data$Label <- sprintf("%s\n(%.1f%%)", plot_data$Category, plot_data$Percentage)
+
+                         p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = "", y = Count, fill = Category)) +
+                           ggplot2::geom_bar(stat = "identity", width = 1, color = "white", size = 0.5) +
+                           ggplot2::coord_polar(theta = "y", start = 0) +
+                           ggplot2::geom_text(ggplot2::aes(label = Label),
+                                              position = ggplot2::position_stack(vjust = 0.5),
+                                              size = 4, color = "white", fontface = "bold") +
+                           ggplot2::theme_void() +
+                           ggplot2::labs(title = sprintf("Distribution of %s", clinical_col),
+                                         subtitle = sprintf("Dataset: %s (N = %d)", dataset, sum(plot_data$Count)),
+                                         fill = clinical_col) +
+                           ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"),
+                                          plot.subtitle = ggplot2::element_text(hjust = 0.5))
                          return(p)
                        }
                      )
