@@ -36,8 +36,8 @@ You can chain methods together to filter the required data sets, download them a
 ```R
 # Filter specific data sets and feature types
 client$filter_metadata(
-  dtxr = c("DTXR100001","DTXR100002"),
-  feature = c("Clinical Data","Pathway Activity","Gene Expression")
+  dtxr = c("DTXR600031","DTXR500068"),
+  feature = c("Clinical Data","Microbial Abundance")
 )
 
 # Check the filtered subset table
@@ -73,9 +73,9 @@ Visualize differential expression results quickly:
 ```R
 # Plot a volcano plot for a specific dataset
 volcano_plt <- client$plot_volcano(
-  dataset = "DTXR100002", 
-  feature_type = "Gene Expression",
-  logFC_col = "LogOR",
+  dataset = "DTXR600031", 
+  feature_type = "Microbial Abundance",
+  logX_col = "LogOR",
   pval_col = "P.value",
   fc_cutoff = 1.0, 
   p_cutoff = 0.05
@@ -90,11 +90,11 @@ __Boxplot__
 
 Compare the expression or values of a specific feature across clinical groups:
 ```R
-# Plot the expression of CD274 (PD-L1) across treatment response groups
+# Plot the abundance of Akkermansia across treatment response groups
 box_plt <- client$plot_boxplot(
-  dataset = "DTXR100002", 
-  feature_type = "Gene Expression", 
-  feature_name = "CD274", 
+  dataset = "DTXR600031", 
+  feature_type = "Microbial Abundance", 
+  feature_name = "g__Akkermansia", 
   group_col = "Response"
 )
 print(box_plt)
@@ -107,11 +107,11 @@ __ROC Curve__
 
 Evaluate the predictive performance of a biomarker:
 ```R
-# Generate an ROC curve to assess CD274 as a predictor for Responder ("R")
+# Generate an ROC curve to assess Akkermansia as a predictor for Responder ("R")
 roc_plt <- client$plot_roc(
-  dataset = "DTXR100001", 
-  feature_type = "Gene Expression", 
-  feature_name = "CD274", 
+  dataset = "DTXR600031", 
+  feature_type = "Microbial Abundance", 
+  feature_name = "g__Akkermansia", 
   group_col = "Response", 
   positive_class = "R"
 )
