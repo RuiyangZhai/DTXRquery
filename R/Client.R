@@ -228,7 +228,7 @@ DisTxRESP <- R6Class("DisTxRESP",
                            ggplot2::geom_vline(xintercept = c(-fc_cutoff, fc_cutoff), linetype = "dashed", color = "black") +
                            ggplot2::geom_hline(yintercept = -log10(p_cutoff), linetype = "dashed", color = "black") +
                            ggplot2::theme_bw() +
-                           ggplot2::labs(title = sprintf("Volcano Plot: %s (%s)", dataset, feature_type),
+                           ggplot2::labs(title = sprintf("%s (%s)", dataset, feature_type),
                                          x = logX_col, y = "-log10(P-value)")
 
                          return(p)

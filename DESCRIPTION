@@ -1,19 +1,21 @@
 Package: DTXRquery
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
-Authors@R: 
-    person("Te", "Ma", , "602393293@qq.com", role = c("aut", "cre"))
+Title: Client Interface (Query, Download and Visualize) for the DisTxRESP Database
+Version: 1.0.0
+Authors@R: c(
+    person("Te", "Ma", , "mate.compbio@foxmail.com", role = c("aut", "cre")),
+    person("Ruiyang", "Zhai", , "zhairuiyang@foxmail.com", role = c("aut", "cre"))
+  )
 Description: What the package does (one paragraph).
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: 
-    base64enc,
     data.table,
     ggplot2,
     httr,
     pROC,
     R6,
+    base64enc,
     rlang,
     utils
