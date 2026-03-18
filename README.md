@@ -14,7 +14,7 @@ You can install the development version of DTXRquery from GitHub using the `devt
 
 ```R
 # install.packages("devtools")
-devtools::install_github("RuiyangZhai/DisTxRESP")
+devtools::install_github("RuiyangZhai/DTXRquery")
 ```
 
 ## Quick Start / Examples
