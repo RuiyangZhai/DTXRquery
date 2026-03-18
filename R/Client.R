@@ -162,8 +162,8 @@ DisTxRESP <- R6Class("DisTxRESP",
                          return(invisible(self))
                        },
 
-                       #' @description Fetch the filtered files and load them directly into an R list structure.
-                       #' @param local_dir String. Optional directory path containing locally downloaded files. If provided, the function will attempt to read from this local directory before fetching from the server.
+                       #' @description Fetch the filtered files and load them into an R list structure.
+                       #' @param local_dir String. The directory path containing locally downloaded files.
                        #' @return Returns the modified R6 object invisibly. The loaded data is accessible via the \code{local_data} field.
                        load_to_memory = function(local_dir="downloaded_data") {
                          if (nrow(self$sub_table) == 0) stop("The filtered table is empty. Nothing to load.")
