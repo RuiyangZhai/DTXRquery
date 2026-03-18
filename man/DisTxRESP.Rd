@@ -4,16 +4,16 @@
 \alias{DisTxRESP}
 \title{DisTxRESP Client}
 \description{
-A client to interact with the 'DisTxRESP', allowing users to query metadata, filter datasets, and download or load data into memory.
+An R6 client to interact with the DisTxRESP database. It allows users to query metadata, filter datasets, batch-download files, and load data directly into R memory for downstream visualization and analysis.
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{metadata}}{The full metadata table downloaded from the server.}
+\item{\code{metadata}}{A data.frame containing the full metadata manifest downloaded from the server.}
 
-\item{\code{sub_table}}{The filtered subset of the metadata table.}
+\item{\code{sub_table}}{A data.frame containing the filtered subset of the metadata.}
 
-\item{\code{local_data}}{Data loaded into R}
+\item{\code{local_data}}{A nested list storing the loaded clinical data, feature matrices, and differential results in R memory.}
 }
 \if{html}{\out{</div>}}
 }
@@ -27,6 +27,7 @@ A client to interact with the 'DisTxRESP', allowing users to query metadata, fil
 \item \href{#method-DisTxRESP-plot_volcano}{\code{DisTxRESP$plot_volcano()}}
 \item \href{#method-DisTxRESP-plot_boxplot}{\code{DisTxRESP$plot_boxplot()}}
 \item \href{#method-DisTxRESP-plot_roc}{\code{DisTxRESP$plot_roc()}}
+\item \href{#method-DisTxRESP-plot_pie}{\code{DisTxRESP$plot_pie()}}
 \item \href{#method-DisTxRESP-clone}{\code{DisTxRESP$clone()}}
 }
 }
@@ -34,7 +35,7 @@ A client to interact with the 'DisTxRESP', allowing users to query metadata, fil
 \if{html}{\out{<a id="method-DisTxRESP-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DisTxRESP-new}{}}}
 \subsection{Method \code{new()}}{
-Create a new database client and fetch full metadata.
+Create a new database client and the fetch full metadata.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DisTxRESP$new(manifest = "Download_Manifest.csv")}\if{html}{\out{</div>}}
 }
@@ -42,16 +43,19 @@ Create a new database client and fetch full metadata.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{manifest}}{Specify the metadata download address. If it already exists, read it directly.}
+\item{\code{manifest}}{String. The local file path for the metadata manifest. If the file already exists locally, it will be read directly; otherwise, it will be downloaded from the server. Defaults to "Download_Manifest.csv".}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new \code{DisTxRESP} object.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DisTxRESP-filter_metadata"></a>}}
 \if{latex}{\out{\hypertarget{method-DisTxRESP-filter_metadata}{}}}
 \subsection{Method \code{filter_metadata()}}{
-Filter the metadata table based on user requirements.
+Filter the metadata table based on specific biological or clinical requirements.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DisTxRESP$filter_metadata(
   dtxr = NULL,
@@ -70,37 +74,37 @@ Filter the metadata table based on user requirements.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{dtxr}}{Character vector.DTXR number form DisTxRESP database.}
+\item{\code{dtxr}}{Character vector. The DTXR dataset identifiers from the DisTxRESP database (e.g., c("DTXR100001")).}
 
-\item{\code{data_type}}{Character vector.}
+\item{\code{data_type}}{Character vector. The omics data types to retain (e.g., c("Transcriptomics")"").}
 
-\item{\code{disease}}{Character vector.}
+\item{\code{disease}}{Character vector. The primary disease types to filter by (e.g., c("Leukemia")).}
 
-\item{\code{disease_sub}}{Character vector.}
+\item{\code{disease_sub}}{Character vector. The specific disease subtypes (e.g., c("Acute myeloid leukemia")).}
 
-\item{\code{treatment}}{Character vector.}
+\item{\code{treatment}}{Character vector. The treatment regimens applied to the cohorts (e.g., c("Acute myeloid leukemia")).}
 
-\item{\code{intervention}}{Character vector.}
+\item{\code{intervention}}{Character vector. The intervention types (e.g., c("Targeted Therapy")).}
 
-\item{\code{sampling_location}}{Character vector.}
+\item{\code{sampling_location}}{Character vector. The tissue origins or sampling locations(e.g., c("Tissue","Bone Marrow")).}
 
-\item{\code{feature}}{Character vector.}
+\item{\code{feature}}{Character vector. The feature types to retain (e.g., c("Gene Expression","Clinical Data")).}
 
-\item{\code{file_type}}{Character vector.}
+\item{\code{file_type}}{Character vector. The file types to retain (e.g., c("Meta Info", "Feature Matrix")).}
 
-\item{\code{min_size}}{integer. Minimum number of samples.}
+\item{\code{min_size}}{Integer. The minimum sample size required for a dataset to be retained. Defaults to 0.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-Returns the modified R6 object invisibly for method chaining.
+Returns the modified R6 object invisibly, allowing for method chaining.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DisTxRESP-download_files"></a>}}
 \if{latex}{\out{\hypertarget{method-DisTxRESP-download_files}{}}}
 \subsection{Method \code{download_files()}}{
-Batch download files in the filtered sub_table to a local directory.
+Batch download files in the filtered \code{sub_table} to a local directory.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DisTxRESP$download_files(output_dir = "downloaded_data", skip_existing = TRUE)}\if{html}{\out{</div>}}
 }
@@ -108,35 +112,41 @@ Batch download files in the filtered sub_table to a local directory.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{output_dir}}{String. The directory to save the downloaded files.}
+\item{\code{output_dir}}{String. The target local directory path to save the downloaded files. Defaults to "downloaded_data".}
 
-\item{\code{skip_existing}}{Boolean. Skip downloaded files.}
+\item{\code{skip_existing}}{Logical. Whether to skip downloading files that already exist in the target directory. Defaults to TRUE.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Returns the modified R6 object invisibly.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DisTxRESP-load_to_memory"></a>}}
 \if{latex}{\out{\hypertarget{method-DisTxRESP-load_to_memory}{}}}
 \subsection{Method \code{load_to_memory()}}{
-Fetch the filtered files and load them directly into an R list of data.frames.
+Fetch the filtered files and load them into an R list structure.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DisTxRESP$load_to_memory(local_dir = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{DisTxRESP$load_to_memory(local_dir = "downloaded_data")}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{local_dir}}{Specify the local data storage path, and read the local data first.}
+\item{\code{local_dir}}{String. The directory path containing locally downloaded files.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Returns the modified R6 object invisibly. The loaded data is accessible via the \code{local_data} field.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DisTxRESP-plot_volcano"></a>}}
 \if{latex}{\out{\hypertarget{method-DisTxRESP-plot_volcano}{}}}
 \subsection{Method \code{plot_volcano()}}{
-Volcano Plot
+Generate a Volcano Plot for differential analysis results.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DisTxRESP$plot_volcano(
   dataset,
@@ -151,60 +161,63 @@ Volcano Plot
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{dataset}}{String. Dataset name (e.g., "DTXR100001").}
+\item{\code{dataset}}{String. The dataset identifier (e.g., "DTXR100001").}
 
-\item{\code{feature_type}}{String. Type of feature (e.g., "Gene Expression").}
+\item{\code{feature_type}}{String. The type of feature (e.g., "Gene Expression").}
 
-\item{\code{logFC_col}}{String. Column name of logFC in difference matrix.}
+\item{\code{logFC_col}}{String. The column name representing the log Fold Change (or LogOR) in the differential matrix. Defaults to "LogOR".}
 
-\item{\code{pval_col}}{String. Column name of P-value or FDR in difference matrix.}
+\item{\code{pval_col}}{String. The column name representing the P-value or FDR in the differential matrix. Defaults to "P.value".}
 
-\item{\code{fc_cutoff}}{Numeric. Fold change threshold.}
+\item{\code{fc_cutoff}}{Numeric. The absolute threshold for fold change significance. Defaults to 1.0.}
 
-\item{\code{p_cutoff}}{Numeric. P-value threshold.}
+\item{\code{p_cutoff}}{Numeric. The threshold for P-value significance. Defaults to 0.05.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A ggplot object
+A \code{ggplot} object.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DisTxRESP-plot_boxplot"></a>}}
 \if{latex}{\out{\hypertarget{method-DisTxRESP-plot_boxplot}{}}}
 \subsection{Method \code{plot_boxplot()}}{
-Boxplot
+Generate a Boxplot to visualize feature expression across different clinical groups.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DisTxRESP$plot_boxplot(
   dataset,
   feature_type,
   feature_name,
-  group_col = "Response"
+  group_col = "Response",
+  stat_method = "wilcox.test"
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{dataset}}{String. Dataset name. (e.g., "DTXR100001").}
+\item{\code{dataset}}{String. The dataset identifier (e.g., "DTXR100001").}
 
-\item{\code{feature_type}}{String. Type of feature matrix (e.g., "Gene Expression").}
+\item{\code{feature_type}}{String. The type of feature matrix (e.g., "Gene Expression").}
 
-\item{\code{feature_name}}{String. Specific feature name (e.g., "CD274").}
+\item{\code{feature_name}}{String. The specific feature name to plot (e.g., "CD274").}
 
-\item{\code{group_col}}{String. Column name used for grouping in clinical information table (e.g., "Response").}
+\item{\code{group_col}}{String. The column name in the clinical metadata used for grouping samples. Defaults to "Response".}
+
+\item{\code{stat_method}}{String. The Method for comparing means.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A ggplot object
+A \code{ggplot} object.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DisTxRESP-plot_roc"></a>}}
 \if{latex}{\out{\hypertarget{method-DisTxRESP-plot_roc}{}}}
 \subsection{Method \code{plot_roc()}}{
-ROC Curve
+Generate an ROC Curve to evaluate the predictive performance of a specific feature.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DisTxRESP$plot_roc(
   dataset,
@@ -218,20 +231,42 @@ ROC Curve
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{dataset}}{String. Dataset name. (e.g., "DTXR100001").}
+\item{\code{dataset}}{String. The dataset identifier (e.g., "DTXR100001").}
 
-\item{\code{feature_type}}{String. Type of feature matrix (e.g., "Gene Expression").}
+\item{\code{feature_type}}{String. The type of feature matrix (e.g., "Gene Expression").}
 
-\item{\code{feature_name}}{String. Specific feature name (e.g., "CD274").}
+\item{\code{feature_name}}{String. The specific feature name to evaluate (e.g., "CD274").}
 
-\item{\code{group_col}}{String. Column name used for grouping in clinical information table (e.g., "Response").}
+\item{\code{group_col}}{String. The column name in the clinical metadata representing the true binary response. Defaults to "Response".}
 
-\item{\code{positive_class}}{String. Classification label defined as "positive" (e.g., "R").}
+\item{\code{positive_class}}{String. The label in the grouping column that represents the positive class (e.g., "R" for Responder). Defaults to "R".}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A ggplot object
+A \code{ggplot} object.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DisTxRESP-plot_pie"></a>}}
+\if{latex}{\out{\hypertarget{method-DisTxRESP-plot_pie}{}}}
+\subsection{Method \code{plot_pie()}}{
+Generate a Pie Chart for categorical clinical information.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DisTxRESP$plot_pie(dataset, clinical_col)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{dataset}}{String. The dataset identifier (e.g., "DTXR100001").}
+
+\item{\code{clinical_col}}{String. The column name in the clinical metadata representing the categorical variable (e.g., "Response", "Sex").}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A \code{ggplot} object.
 }
 }
 \if{html}{\out{<hr>}}

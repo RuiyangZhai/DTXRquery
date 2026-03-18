@@ -3,7 +3,7 @@
 #' @importFrom R6 R6Class
 #' @importFrom data.table fread
 #' @importFrom base64enc base64decode
-#' @importFrom httr GET http_error http_status
+#' @importFrom httr GET http_error http_status progress
 #' @importFrom ggplot2 ggplot aes geom_point scale_color_manual theme_bw labs geom_vline geom_hline geom_boxplot geom_jitter theme_classic
 #' @importFrom ggpubr stat_compare_means
 #' @importFrom pROC roc ggroc
@@ -17,12 +17,12 @@ DisTxRESP <- R6Class("DisTxRESP",
                          return(dl_url)
                        },
                        download_file = function(url, destfile) {
-                         response <- GET(url,
-                                         write_disk(destfile, overwrite = TRUE),
-                                         progress(),
-                                         config(max_recv_speed_large = 100000))
-                         if(http_error(response)) {
-                           stop("Download failed: ", http_status(response)$message)
+                         response <- httr::GET(url,
+                                               httr::write_disk(destfile, overwrite = TRUE),
+                                               httr::progress(),
+                                               httr::config(max_recv_speed_large = 1000000))
+                         if(httr::http_error(response)) {
+                           stop("Download failed: ", httr::http_status(response)$message)
                          }
                          return(invisible(response))
                        }
@@ -43,11 +43,8 @@ DisTxRESP <- R6Class("DisTxRESP",
                            message("Connecting to server and fetching metadata table...")
                            meta_url <- private$make_request("Download_Manifest.csv")
 
-                           tryCatch({
-                             download.file(meta_url, destfile = manifest, mode = "wb", quiet = TRUE)
-                           }, error = function(e) {
-                             stop("Failed to fetch metadata. Please check your network or the base_url. Details: ", e$message)
-                           })
+                           download_file(url = meta_url, destfile = manifest)
+
                          }else{
                            message("Local file found, reading...")
                          }
@@ -207,12 +204,12 @@ DisTxRESP <- R6Class("DisTxRESP",
                        #' @description Generate a Volcano Plot for differential analysis results.
                        #' @param dataset String. The dataset identifier (e.g., "DTXR100001").
                        #' @param feature_type String. The type of feature (e.g., "Gene Expression").
-                       #' @param logFC_col String. The column name representing the log Fold Change (or LogOR) in the differential matrix. Defaults to "LogOR".
+                       #' @param logX_col String. The column name representing the log2 Fold Change (or LogOR) in the differential matrix. Defaults to "LogOR".
                        #' @param pval_col String. The column name representing the P-value or FDR in the differential matrix. Defaults to "P.value".
                        #' @param fc_cutoff Numeric. The absolute threshold for fold change significance. Defaults to 1.0.
                        #' @param p_cutoff Numeric. The threshold for P-value significance. Defaults to 0.05.
                        #' @return A \code{ggplot} object.
-                       plot_volcano = function(dataset, feature_type, logFC_col = "LogOR", pval_col = "P.value",
+                       plot_volcano = function(dataset, feature_type, logX_col = "LogOR", pval_col = "P.value",
                                                fc_cutoff = 1.0, p_cutoff = 0.05) {
 
                          if (is.null(self$local_data[[dataset]])) stop("The dataset is not found!")
@@ -220,10 +217,10 @@ DisTxRESP <- R6Class("DisTxRESP",
                          if (is.null(diff_df)) stop("No difference matrix found for this feature type!")
 
                          diff_df$Significance <- "Not Significant"
-                         diff_df$Significance[diff_df[[logFC_col]] > fc_cutoff & diff_df[[pval_col]] < p_cutoff] <- "Up"
-                         diff_df$Significance[diff_df[[logFC_col]] < -fc_cutoff & diff_df[[pval_col]] < p_cutoff] <- "Down"
+                         diff_df$Significance[diff_df[[logX_col]] > fc_cutoff & diff_df[[pval_col]] < p_cutoff] <- "Up"
+                         diff_df$Significance[diff_df[[logX_col]] < -fc_cutoff & diff_df[[pval_col]] < p_cutoff] <- "Down"
 
-                         p <- ggplot2::ggplot(diff_df, ggplot2::aes(x = .data[[logFC_col]],
+                         p <- ggplot2::ggplot(diff_df, ggplot2::aes(x = .data[[logX_col]],
                                                                     y = -log10(.data[[pval_col]]),
                                                                     color = .data[["Significance"]])) +
                            ggplot2::geom_point(alpha = 0.8, size = 1.5) +
@@ -232,7 +229,7 @@ DisTxRESP <- R6Class("DisTxRESP",
                            ggplot2::geom_hline(yintercept = -log10(p_cutoff), linetype = "dashed", color = "black") +
                            ggplot2::theme_bw() +
                            ggplot2::labs(title = sprintf("Volcano Plot: %s (%s)", dataset, feature_type),
-                                         x = "log(Odd Ratio)", y = "-log10(P-value)")
+                                         x = logX_col, y = "-log10(P-value)")
 
                          return(p)
                        },
@@ -269,13 +266,13 @@ DisTxRESP <- R6Class("DisTxRESP",
                            ggplot2::geom_boxplot(outlier.shape = NA, alpha = 0.7) +
                            ggplot2::geom_jitter(width = 0.2, size = 1, alpha = 0.5) +
                            ggplot2::theme_classic() +
-                           ggplot2::labs(title = sprintf("Expression of %s", feature_name),
+                           ggplot2::labs(title = sprintf("Feature: %s", feature_name),
                                          subtitle = sprintf("Dataset: %s", dataset),
                                          y = "Feature Value", x = group_col) +
                            ggplot2::theme(legend.position = "none")+
                            ggpubr::stat_compare_means(
                              method = stat_method,
-                             label = "p.signif",
+                             label = "p.format",
                              label.x = 1.5
                            )
 
@@ -318,7 +315,7 @@ DisTxRESP <- R6Class("DisTxRESP",
                          p <- pROC::ggroc(roc_obj, color = "#d73027", size = 1) +
                            ggplot2::theme_minimal() +
                            ggplot2::geom_abline(slope = 1, intercept = 1, linetype = "dashed", color = "grey50") +
-                           ggplot2::labs(title = sprintf("ROC Curve: %s", feature_name),
+                           ggplot2::labs(title = sprintf("Feature: %s", feature_name),
                                          subtitle = sprintf("AUC = %s", auc_val),
                                          x = "Specificity", y = "Sensitivity")
 
