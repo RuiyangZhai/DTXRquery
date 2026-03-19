@@ -119,7 +119,7 @@ DisTxRESP <- R6Class("DisTxRESP",
                          #   private$check_fuzzy_match(file_type, temp_df$File_Type, "File_Type (file_type)")
                          #   temp_df <- temp_df[temp_df$File_Type %in% file_type, ]
                          # }
-
+                         row.names(temp_df)=NULL
                          self$sub_table <- temp_df
                          message(sprintf("Filtered down to %d records.", nrow(self$sub_table)))
 
