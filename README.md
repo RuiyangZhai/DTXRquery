@@ -27,27 +27,68 @@ library(DTXRquery)
 
 # Initialize the client
 client <- DisTxRESP$new()
+# Connecting to server and fetching metadata table...
+# Downloading: 310 kB
 
 # View the full metadata
 head(client$metadata)
+
 ```
 #### 2. Filter and Load Data
 You can chain methods together to filter the required data sets, download them and load them into memory for analysis.
 ```R
+# Filter and screen specific omics, diseases, drugs, etc
+client$filter_metadata(omic = c("Transcriptomics"),
+                       disease = c("Inflammatory bowel disease"),
+                       intervention = c("Golimumab"),
+                       feature = c("Clinical Data","Gene Expression"))
+# Filtered down to 6 records.
+
+# Check the filtered subset table
+head(client$sub_table)
+# Dataset           Omics               Disease_Type    Disease_Subtype        Treatment_Regimen Intervention Sampling_Location Sample_Size    Feature_Type                        File_Name            File_Type
+# 1 DTXR100447 Transcriptomics Inflammatory bowel disease Ulcerative Colitis Immunomodulatory Therapy    Golimumab            Tissue          84   Clinical Data             DTXR100447_pdata.csv            Meta Info
+# 2 DTXR100447 Transcriptomics Inflammatory bowel disease Ulcerative Colitis Immunomodulatory Therapy    Golimumab            Tissue          84 Gene Expression DTXR100447_Differential_Gene.csv Differential Results
+# 3 DTXR100447 Transcriptomics Inflammatory bowel disease Ulcerative Colitis Immunomodulatory Therapy    Golimumab            Tissue          84 Gene Expression              DTXR100447_Gene.csv       Feature Matrix
+# 4 DTXR100448 Transcriptomics Inflammatory bowel disease Ulcerative Colitis Immunomodulatory Therapy    Golimumab            Tissue          59   Clinical Data             DTXR100448_pdata.csv            Meta Info
+# 5 DTXR100448 Transcriptomics Inflammatory bowel disease Ulcerative Colitis Immunomodulatory Therapy    Golimumab            Tissue          59 Gene Expression DTXR100448_Differential_Gene.csv Differential Results
+# 6 DTXR100448 Transcriptomics Inflammatory bowel disease Ulcerative Colitis Immunomodulatory Therapy    Golimumab            Tissue          59 Gene Expression              DTXR100448_Gene.csv       Feature Matrix
+
+# Batch download files
+your_save_dir = "my_data"
+client$download_files(your_save_dir)
+# Downloading DTXR100447_pdata.csv...
+# Downloading: 390 B     
+# Downloading DTXR100447_Differential_Gene.csv...
+# Downloading: 500 kB     
+# Downloading DTXR100447_Gene.csv...
+# Downloading: 13 MB     
+# Downloading DTXR100448_pdata.csv...
+# Downloading: 440 B     
+# Downloading DTXR100448_Differential_Gene.csv...
+# Downloading: 410 kB     
+# Downloading DTXR100448_Gene.csv...
+# Downloading: 9.2 MB     
+# 
+# Batch download complete.
+
 # Filter specific data sets and feature types
 client$filter_metadata(
   dtxr = c("DTXR600031","DTXR500068"),
   feature = c("Clinical Data","Microbial Abundance")
 )
+# Filtered down to 6 records.
 
-# Check the filtered subset table
-head(client$sub_table)
-
-# Batch download files
-client$download_files(output_dir = "my_data")
-
-# Load into memory
-client$load_to_memory(local_dir = "my_data")
+# Batch download files and load into memory
+client$download_files(your_save_dir)$load_to_memory(your_save_dir)
+# File found, loading DTXR500068_pdata.csv into memory...
+# File found, loading DTXR500068_Differential_Microbial_Composition.csv into memory...
+# File found, loading DTXR500068_Microbial_Composition.csv into memory...
+# File found, loading DTXR600031_pdata.csv into memory...
+# File found, loading DTXR600031_Differential_Microbial_Composition.csv into memory...
+# File found, loading DTXR600031_Microbial_Composition.csv into memory...
+# 
+# All selected files successfully loaded into memory.
 ```
 
 #### 3. Data Visualization
