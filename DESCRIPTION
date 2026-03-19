@@ -18,4 +18,4 @@ Imports:
     R6,
     base64enc,
     rlang,
-    utils
+    ggpubr

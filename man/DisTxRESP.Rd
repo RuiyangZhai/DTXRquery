@@ -59,7 +59,7 @@ Filter the metadata table based on specific biological or clinical requirements.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DisTxRESP$filter_metadata(
   dtxr = NULL,
-  data_type = NULL,
+  omic = NULL,
   disease = NULL,
   disease_sub = NULL,
   treatment = NULL,
@@ -76,7 +76,7 @@ Filter the metadata table based on specific biological or clinical requirements.
 \describe{
 \item{\code{dtxr}}{Character vector. The DTXR dataset identifiers from the DisTxRESP database (e.g., c("DTXR100001")).}
 
-\item{\code{data_type}}{Character vector. The omics data types to retain (e.g., c("Transcriptomics")"").}
+\item{\code{omic}}{Character vector. The omics data types to retain (e.g., c("Transcriptomics")"").}
 
 \item{\code{disease}}{Character vector. The primary disease types to filter by (e.g., c("Leukemia")).}
 
@@ -151,7 +151,7 @@ Generate a Volcano Plot for differential analysis results.
 \if{html}{\out{<div class="r">}}\preformatted{DisTxRESP$plot_volcano(
   dataset,
   feature_type,
-  logFC_col = "LogOR",
+  logX_col = "LogOR",
   pval_col = "P.value",
   fc_cutoff = 1,
   p_cutoff = 0.05
@@ -165,7 +165,7 @@ Generate a Volcano Plot for differential analysis results.
 
 \item{\code{feature_type}}{String. The type of feature (e.g., "Gene Expression").}
 
-\item{\code{logFC_col}}{String. The column name representing the log Fold Change (or LogOR) in the differential matrix. Defaults to "LogOR".}
+\item{\code{logX_col}}{String. The column name representing the log2 Fold Change (or LogOR) in the differential matrix. Defaults to "LogOR".}
 
 \item{\code{pval_col}}{String. The column name representing the P-value or FDR in the differential matrix. Defaults to "P.value".}
 

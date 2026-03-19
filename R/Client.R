@@ -54,7 +54,7 @@ DisTxRESP <- R6Class("DisTxRESP",
 
                        #' @description Filter the metadata table based on specific biological or clinical requirements.
                        #' @param dtxr Character vector. The DTXR dataset identifiers from the DisTxRESP database (e.g., c("DTXR100001")).
-                       #' @param data_type Character vector. The omics data types to retain (e.g., c("Transcriptomics")"").
+                       #' @param omic Character vector. The omics data types to retain (e.g., c("Transcriptomics")"").
                        #' @param disease Character vector. The primary disease types to filter by (e.g., c("Leukemia")).
                        #' @param disease_sub Character vector. The specific disease subtypes (e.g., c("Acute myeloid leukemia")).
                        #' @param treatment Character vector. The treatment regimens applied to the cohorts (e.g., c("Acute myeloid leukemia")).
@@ -64,7 +64,7 @@ DisTxRESP <- R6Class("DisTxRESP",
                        #' @param file_type Character vector. The file types to retain (e.g., c("Meta Info", "Feature Matrix")).
                        #' @param min_size Integer. The minimum sample size required for a dataset to be retained. Defaults to 0.
                        #' @return Returns the modified R6 object invisibly, allowing for method chaining.
-                       filter_metadata = function(dtxr=NULL,data_type = NULL,disease = NULL,
+                       filter_metadata = function(dtxr=NULL,omic = NULL,disease = NULL,
                                                   disease_sub = NULL,treatment = NULL,
                                                   intervention = NULL,sampling_location = NULL,
                                                   feature = NULL, file_type = NULL,min_size=0) {
@@ -74,8 +74,8 @@ DisTxRESP <- R6Class("DisTxRESP",
                          if (!is.null(dtxr)) {
                            temp_df <- temp_df[temp_df$Dataset %in% dtxr, ]
                          }
-                         if (!is.null(data_type)) {
-                           temp_df <- temp_df[grepl(paste0(data_type,collapse = "|"),temp_df$Omics), ]
+                         if (!is.null(omic)) {
+                           temp_df <- temp_df[grepl(paste0(omic,collapse = "|"),temp_df$Omics), ]
                          }
                          if (!is.null(disease)) {
                            temp_df <- temp_df[grepl(paste0(disease,collapse = "|"),temp_df$Disease_Type), ]
@@ -99,26 +99,7 @@ DisTxRESP <- R6Class("DisTxRESP",
                            temp_df <- temp_df[grepl(paste0(file_type,collapse = "|"),temp_df$File_Type), ]
                          }
                          temp_df = temp_df[temp_df$Sample_Size>=min_size,]
-                         # if (!is.null(dtxr)) {
-                         #   private$check_fuzzy_match(dtxr, temp_df$Dataset, "Dataset (dtxr)")
-                         #   temp_df <- temp_df[temp_df$Dataset %in% dtxr, ]
-                         # }
-                         # if (!is.null(data_type)) {
-                         #   private$check_fuzzy_match(data_type, temp_df$Omics, "Omics (data_type)")
-                         #   temp_df <- temp_df[temp_df$Omics %in% data_type, ]
-                         # }
-                         # if (!is.null(disease)) {
-                         #   private$check_fuzzy_match(disease, temp_df$Disease_Type, "Disease_Type (disease)")
-                         #   temp_df <- temp_df[temp_df$Disease_Type %in% disease, ]
-                         # }
-                         # if (!is.null(feature)) {
-                         #   private$check_fuzzy_match(feature, temp_df$Feature_Type, "Feature_Type (feature)")
-                         #   temp_df <- temp_df[temp_df$Feature_Type %in% feature, ]
-                         # }
-                         # if (!is.null(file_type)) {
-                         #   private$check_fuzzy_match(file_type, temp_df$File_Type, "File_Type (file_type)")
-                         #   temp_df <- temp_df[temp_df$File_Type %in% file_type, ]
-                         # }
+
                          row.names(temp_df)=NULL
                          self$sub_table <- temp_df
                          message(sprintf("Filtered down to %d records.", nrow(self$sub_table)))
